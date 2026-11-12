@@ -1,0 +1,28 @@
+# REFERENCE TEMPLATE: solution.sh resolves a real registry manifest digest.
+# Do not copy a fabricated SHA256 value: use the immutable digest returned by Docker.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog-api
+  labels:
+    app: catalog-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: catalog-api
+  template:
+    metadata:
+      labels:
+        app: catalog-api
+        release: digest-pinned
+    spec:
+      containers:
+        - name: web
+          image: docker.io/library/nginx@sha256:REPLACE_WITH_64_HEX_MANIFEST_DIGEST
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          resources:
+            requests: {cpu: 20m, memory: 32Mi}
+            limits: {cpu: 150m, memory: 128Mi}
