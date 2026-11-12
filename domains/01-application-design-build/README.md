@@ -12,10 +12,12 @@ Bám các năng lực: build images, workload controllers, init/sidecar patterns
 | D1-006 | Native sidecar lifecycle + Job | [Bài 006](labs/006-native-sidecar/README.md) |
 | D1-007 | Projected Volumes + bound token | [Bài 007](labs/007-projected-volumes/README.md) |
 | D1-008 | Job retry, backoffLimit và failure handling | [Bài 008](labs/008-job-retry-backoff/README.md) |
+| D1-009 | CronJob concurrency, missed schedules và time zone | [Bài 009](labs/009-cronjob-concurrency/README.md) |
 
-D1-009–D1-012 (planned): CronJob concurrency, DaemonSet, image digest, mock exam.
+D1-010–D1-012 (planned): DaemonSet, image digest, mock exam.
 
-Run: `./env/kind/up.sh`, `./ckad domain start D1-008`, `./ckad domain check D1-008`, `./ckad domain solve D1-008`, `./ckad domain reset D1-008`.
+Run: `./env/kind/up.sh`, `./ckad domain start D1-009`, `./ckad domain check D1-009`, `./ckad domain solve D1-009`, `./ckad domain reset D1-009`.
 
 Trạng thái: [STATUS.json](../STATUS.json). Chưa xác nhận end-to-end trên kind.
+
 

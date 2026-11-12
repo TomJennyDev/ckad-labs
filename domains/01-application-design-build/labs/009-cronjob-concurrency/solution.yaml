@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nightly-ledger
+  labels:
+    app: nightly-ledger
+spec:
+  schedule: "*/2 * * * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 45
+  suspend: true
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      ttlSecondsAfterFinished: 3600
+      template:
+        metadata:
+          labels:
+            app: ledger-worker
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: ledger
+              image: busybox:1.36
+              command:
+                - sh
+                - -c
+                - |
+                  echo 'ledger-reconciled'
+                  exit 0
+              resources:
+                requests: {cpu: 25m, memory: 16Mi}
+                limits: {cpu: 100m, memory: 64Mi}
