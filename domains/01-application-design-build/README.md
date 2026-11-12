@@ -1,6 +1,6 @@
 # Domain 1 — Application Design and Build (20%)
 
-Bám 4 năng lực: build images; choose workload; init/sidecar patterns; ephemeral/persistent volumes.
+Bám các năng lực: build images, workload controllers, init/sidecar patterns, ephemeral/persistent/projected volumes.
 
 | Lab | Nội dung | Tài liệu |
 |---|---|---|
@@ -10,9 +10,10 @@ Bám 4 năng lực: build images; choose workload; init/sidecar patterns; epheme
 | D1-004 | Sidecar logs | [Bài 004](labs/004-sidecar-logs/README.md) |
 | D1-005 | emptyDir + PVC | [Bài 005](labs/005-volumes/README.md) |
 | D1-006 | Native sidecar lifecycle + Job | [Bài 006](labs/006-native-sidecar/README.md) |
+| D1-007 | Projected Volumes + bound token | [Bài 007](labs/007-projected-volumes/README.md) |
 
-Chạy `./env/kind/up.sh`, `./ckad domain start D1-006`, `./ckad domain check D1-006`, `./ckad domain solve D1-006`, `./ckad domain reset D1-006`.
+D1-008–D1-012 (planned): Job retry, CronJob concurrency, DaemonSet, image digest, mock exam.
 
-D1-007–D1-012 (planned): projected volumes, Job retry, CronJob concurrency, DaemonSet, image digest, mock exam.
+Run: `./env/kind/up.sh`, `./ckad domain start D1-007`, `./ckad domain check D1-007`, `./ckad domain solve D1-007`, `./ckad domain reset D1-007`.
 
 Trạng thái: [STATUS.json](../STATUS.json). Chưa xác nhận end-to-end trên kind.

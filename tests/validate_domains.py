@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Static checks of Domain 1 curriculum. Runtime checks require Docker/kind."""
+"""Validate all completed Domain 1 lab packages against STATUS.json."""
 from pathlib import Path
 import json
 import sys
@@ -9,42 +9,46 @@ ROOT = Path(__file__).resolve().parents[1]
 status = json.loads((ROOT / "domains/STATUS.json").read_text())
 base = ROOT / "domains/01-application-design-build/labs"
 errors = []
+completed = status["completed_ids"]
 if sum(item["planned_labs"] for item in status["domain_order"]) != 60:
     errors.append("Domain target count must be 60")
-if status["next_planned_id"] != "D1-006":
-    errors.append("The next planned lab should be D1-006")
-for expected in ["D1-001", "D1-002", "D1-003", "D1-004", "D1-005"]:
-    if expected not in status["completed_ids"]:
-        errors.append("Status missing " + expected)
-    lab_id = expected[-3:]
-    dirs = list(base.glob(lab_id + "-*"))
+if len(completed) != len(set(completed)):
+    errors.append("Duplicate completed IDs")
+expected = [f"D1-{i:03d}" for i in range(1, len(completed) + 1)]
+if completed != expected:
+    errors.append(f"Completed IDs not sequential: {completed}")
+if status["next_planned_id"] != f"D1-{len(completed)+1:03d}":
+    errors.append("Next planned ID does not follow completed IDs")
+for lab_id in completed:
+    dirs = list(base.glob(lab_id[-3:] + "-*"))
     if len(dirs) != 1:
-        errors.append("Expected one lab directory for " + expected)
+        errors.append("Expected exactly one directory for " + lab_id)
         continue
     directory = dirs[0]
-    for part in ["README.md", "setup.yaml", "solution.yaml", "solution.sh", "verify.sh"]:
+    for part in ("README.md", "setup.yaml", "solution.yaml", "solution.sh", "verify.sh"):
         if not (directory / part).is_file():
-            errors.append(str(directory / part) + " missing")
+            errors.append(f"{directory}/{part} missing")
+    if not all((directory / part).is_file() for part in ("README.md", "setup.yaml", "solution.yaml")):
+        continue
     readme = (directory / "README.md").read_text()
     if "flowchart" not in readme or "sequenceDiagram" not in readme:
-        errors.append(expected + " must have two Mermaid diagrams")
-    if "Negative test" not in readme:
-        errors.append(expected + " missing negative test")
-    for part in ["setup.yaml", "solution.yaml"]:
+        errors.append(lab_id + " missing two Mermaid diagrams")
+    if "Negative test" not in readme and "negative test" not in readme.lower():
+        errors.append(lab_id + " missing negative test")
+    for part in ("setup.yaml", "solution.yaml"):
         try:
             documents = list(yaml.safe_load_all((directory / part).read_text()))
-            if part == "solution.yaml" and not any(
-                isinstance(doc, dict) and doc.get("kind") for doc in documents
-            ):
-                errors.append(expected + " has no Kubernetes resource")
+            if part == "solution.yaml" and not any(isinstance(doc, dict) and doc.get("kind") for doc in documents):
+                errors.append(lab_id + " has no Kubernetes resource")
             for doc in documents:
                 if isinstance(doc, dict) and doc.get("kind"):
-                    assert doc.get("apiVersion") and doc.get("metadata", {}).get("name")
+                    if not doc.get("apiVersion") or not doc.get("metadata", {}).get("name"):
+                        errors.append(lab_id + " missing apiVersion/metadata.name")
                     if doc.get("metadata", {}).get("namespace"):
-                        errors.append(expected + " hardcodes namespace")
-        except (yaml.YAMLError, AssertionError) as exc:
-            errors.append(expected + " invalid " + part + ": " + str(exc))
+                        errors.append(lab_id + " hardcodes namespace")
+        except yaml.YAMLError as exc:
+            errors.append(f"{lab_id} invalid {part}: {exc}")
 if errors:
     print("\n".join(errors))
     sys.exit(1)
-print("PASS: 5 Domain-1 lab packages + 60-lab status registry validated")
+print(f"PASS: {len(completed)} Domain-1 packages and 60-lab registry validated")
