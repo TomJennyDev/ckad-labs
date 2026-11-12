@@ -21,7 +21,7 @@
     },
     {
       "id": "D4",
-      "name": "Application Environment Configuration and Security",
+      "name": "Application Environment, Configuration and Security",
       "weight": 25,
       "planned_labs": 15
     },
@@ -37,9 +37,10 @@
     "D1-002",
     "D1-003",
     "D1-004",
-    "D1-005"
+    "D1-005",
+    "D1-006"
   ],
-  "next_planned_id": "D1-006",
+  "next_planned_id": "D1-007",
   "runtime_smoke": "not_run",
   "policy": "One next planned lab per hourly run, commit and update registry; no duplicate concepts"
 }
