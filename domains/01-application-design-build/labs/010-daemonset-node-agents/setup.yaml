@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-observer
+  labels:
+    app: node-observer
+spec:
+  selector:
+    matchLabels:
+      app: node-observer
+  template:
+    metadata:
+      labels:
+        app: node-observer
+    spec:
+      nodeSelector:
+        kubernetes.io/os: linux
+        ckad.example.io/pool: nonexistent
+      containers:
+        - name: observer
+          image: busybox:missing-ckad-tag
+          command: ["sh", "-c", "echo broken; sleep 3600"]
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 50m, memory: 32Mi}

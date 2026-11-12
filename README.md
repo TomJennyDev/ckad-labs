@@ -42,3 +42,8 @@ Mỗi lab được cô lập trong namespace `ckad-NNN`. Lệnh `reset` chỉ x�
 Các lab có `README.md` (tình huống, giải thích, sơ đồ, negative test), `setup.yaml`, `solution.yaml` và `verify.sh`. Xem [ROADMAP.md](ROADMAP.md) để phân biệt lab đã làm và dự kiến.
 
 Tham khảo [Kubernetes docs](https://kubernetes.io/docs/concepts/), [CNCF curriculum](https://github.com/cncf/curriculum), [dgkanatsios/CKAD-exercises](https://github.com/dgkanatsios/CKAD-exercises), [bmuschko/ckad-crash-course](https://github.com/bmuschko/ckad-crash-course). Tình huống và diagram được tự biên soạn.
+
+
+## Domain tracks
+
+[Domain 1 — Application Design and Build](domains/01-application-design-build/README.md) · [Curriculum progress](domains/STATUS.json). Các lab `labs/` cũ là foundation; domain labs tách namespace và dùng `./ckad domain ...`.

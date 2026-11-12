@@ -1,0 +1,59 @@
+name: CKAD Domain Lab Validation
+on:
+  push:
+    paths:
+      - 'domains/**'
+      - 'scripts/domain-lab.sh'
+      - 'ckad'
+      - 'tests/validate_domains.py'
+      - '.github/workflows/domain-labs.yml'
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      smoke:
+        description: 'Run all completed Domain 1 labs on real kind in Docker'
+        type: boolean
+        default: false
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate Bash and manifest YAML
+        run: |
+          set -euo pipefail
+          python -m pip install pyyaml
+          bash -n ckad
+          bash -n scripts/domain-lab.sh
+          find domains -name '*.sh' -print0 | xargs -0 -r -n1 bash -n
+          python tests/validate_domains.py
+  smoke:
+    if: github.event_name == 'workflow_dispatch' && inputs.smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install kind v0.33 and kubectl v1.37
+        run: |
+          curl -fsSLo /tmp/kind https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64
+          curl -fsSLo /tmp/kubectl https://dl.k8s.io/release/v1.37.0/bin/linux/amd64/kubectl
+          sudo install /tmp/kind /tmp/kubectl /usr/local/bin/
+      - name: Build Kubernetes-in-Docker cluster
+        run: ./env/kind/up.sh
+      - name: Solve and grade all completed Domain 1 labs
+        run: |
+          set -euo pipefail
+          for id in $(python -c 'import json; print(" ".join(json.load(open("domains/STATUS.json"))["completed_ids"]))'); do
+            ./ckad domain start "$id"
+            ./ckad domain solve "$id"
+            ./ckad domain check "$id"
+            ./ckad domain reset "$id"
+          done
+      - name: Diagnostics on failure
+        if: failure()
+        run: |
+          kubectl --context kind-ckad-labs get ns || true
+          kubectl --context kind-ckad-labs get pods -A -o wide || true
