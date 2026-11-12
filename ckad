@@ -17,15 +17,14 @@ if [[ "$cmd" == "doctor" ]]; then
   exit 0
 fi
 if [[ "$cmd" == "help" || "$cmd" == "--help" ]]; then
-  echo "Usage: ./ckad list|doctor|start|check|hint|solve|reset [001..010]"
+  echo "Usage: ./ckad list|doctor|start|check|hint|solve|reset [001..060]"
   exit 0
 fi
 [[ "$cmd" =~ ^(start|check|hint|solve|reset)$ ]] || fail "Unknown command: $cmd"
 [[ "$2" =~ ^[0-9]{1,3}$ ]] || fail "Expected numeric lab ID"
 id="$(printf '%03d' "$((10#$2))")"
-matches=("$ROOT"/labs/"$id"-*)
-[[ -d "matches[0]" ]] || fail "Lab $id not implemented"
-d="matches[0]"
+d="$(find "$ROOT/labs" -mindepth 1 -maxdepth 1 -type d -name "$id-*" -print -quit)"
+[[ -n "$d" ]] || fail "Lab $id not implemented (see ROADMAP.md)"
 ns="ckad-$id"
 if [[ "$cmd" == "hint" ]]; then
   echo "Investigate: kubectl --context kind-ckad-labs -n $ns get all"
@@ -34,12 +33,8 @@ if [[ "$cmd" == "hint" ]]; then
 fi
 ensure_cluster
 if [[ "$cmd" == "start" ]]; then
-  if k get ns "$ns" >/dev/null 2>&1; then
-    ensure_owner "$ns"
-  else
-    k create ns "$ns"
-    k label ns "$ns" app.kubernetes.io/managed-by=ckad-labs
-  fi
+  if k get ns "$ns" >/dev/null 2>&1; then ensure_owner "$ns"
+  else k create ns "$ns"; k label ns "$ns" app.kubernetes.io/managed-by=ckad-labs; fi
   if grep -q '^kind:' "$d/setup.yaml"; then k -n "$ns" apply -f "$d/setup.yaml"; fi
   echo "Lab $id ready. Open $d/README.md"
 else

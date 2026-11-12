@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: api}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: api}
+  template:
+    metadata:
+      labels: {app: api}
+    spec:
+      containers:
+        - name: api
+          image: nginx:1.27
+          startupProbe:
+            httpGet: {path: /, port: 80}
+            periodSeconds: 2
+            failureThreshold: 20
+          readinessProbe:
+            httpGet: {path: /, port: 80}
+            periodSeconds: 3
+          livenessProbe:
+            httpGet: {path: /, port: 80}
+            periodSeconds: 5

@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata: {name: report}
+spec:
+  completions: 2
+  parallelism: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: report
+          image: busybox:1.36
+          command: ["sh", "-c", "echo report-done"]
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata: {name: nightly}
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  suspend: true
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: nightly
+              image: busybox:1.36
+              command: ["sh", "-c", "echo nightly-done"]

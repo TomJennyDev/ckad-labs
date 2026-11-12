@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-ROOT="$(cd "$(dirname "$(realpath "$0")")" && pwd)"
+ROOT="$(cd "$(dirname "$BASH_SOURCE")/.." && pwd)"
 CKAD_CONTEXT="kind-ckad-labs"
 k() { kubectl --context "$CKAD_CONTEXT" "$@"; }
 fail() { echo "ERROR: $*" >&2; exit 1; }
