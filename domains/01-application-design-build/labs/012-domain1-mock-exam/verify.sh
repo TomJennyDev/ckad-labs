@@ -18,7 +18,7 @@ init="$(field deploy/gateway '{.spec.template.spec.initContainers[0].name}')"
 initmount="$(field deploy/gateway '{.spec.template.spec.initContainers[0].volumeMounts[0].name}')"
 webmount="$(field deploy/gateway '{.spec.template.spec.containers[0].volumeMounts[0].name}')"
 vol="$(field deploy/gateway '{.spec.template.spec.volumes[0].name}')"
-if [[ "$init" == prepare && "$initmount" == work && "$webmount" == work && "$vol" == work ]] && [[ "$(field deploy/gateway '{.spec.template.spec.volumes[0].emptyDir}')" == "{}" ]]; then
+if [[ "$init" == prepare && "$initmount" == work && "$webmount" == work && "$vol" == work ]] && k -n "$NS" get deploy gateway -o json | python3 -c 'import json,sys; v=json.load(sys.stdin)["spec"]["template"]["spec"]["volumes"]; sys.exit(not any(x.get("name")=="work" and "emptyDir" in x for x in v))'; then
   pod="$(k -n "$NS" get pods -l app=gateway -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
   if [[ -n "$pod" ]] && [[ "$(k -n "$NS" exec "$pod" -c web -- cat /work/status.txt 2>/dev/null || true)" == prepared ]]; then pass "Q2: init container writes shared file" 25; else miss "Q2: shared file not readable" 25; fi
 else miss "Q2: init container + emptyDir" 25; fi
