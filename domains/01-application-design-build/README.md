@@ -15,9 +15,10 @@ Bám các năng lực: build images, workload controllers, init/sidecar patterns
 | D1-009 | CronJob concurrency, missed schedules và time zone | [Bài 009](labs/009-cronjob-concurrency/README.md) |
 | D1-010 | DaemonSet node telemetry agents, scheduling và rolling update | [Bài 010](labs/010-daemonset-node-agents/README.md) |
 | D1-011 | Image digest pinning và reproducible Deployment | [Bài 011](labs/011-image-digest-pinning/README.md) |
+| D1-012 | Mini mock exam tổng hợp 5 nhiệm vụ | [Bài 012](labs/012-domain1-mock-exam/README.md) |
 
-D1-012 (planned): mock exam.
+**Domain 1: 12/12 lab đã có mã nguồn.** Bài tiếp theo: D2-001 (Application Deployment). Chưa xác nhận end-to-end trên kind.
 
-Run: `./env/kind/up.sh`, `./ckad domain start D1-011`, `./ckad domain check D1-011`, `./ckad domain solve D1-011`, `./ckad domain reset D1-011`.
+Run: `./env/kind/up.sh`, `./ckad domain start D1-012`, `./ckad domain check D1-012`, `./ckad domain solve D1-012`, `./ckad domain reset D1-012`.
 
-Trạng thái: [STATUS.json](../STATUS.json). Chưa xác nhận end-to-end trên kind.
+Trạng thái: [STATUS.json](../STATUS.json).

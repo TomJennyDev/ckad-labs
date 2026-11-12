@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      volumes:
+        - name: work
+          emptyDir: {}
+      initContainers:
+        - name: prepare
+          image: busybox:1.36
+          command: ["sh", "-c", "echo prepared > /work/status.txt"]
+          volumeMounts:
+            - name: work
+              mountPath: /work
+      containers:
+        - name: web
+          image: nginx:1.27
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: work
+              mountPath: /work
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 150m
+              memory: 128Mi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: batch-report
+spec:
+  completions: 2
+  parallelism: 1
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: batch
+          image: busybox:1.36
+          command: ["sh", "-c", "echo batch-completed"]
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: scheduled-report
+spec:
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  suspend: true
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: report
+              image: busybox:1.36
+              command: ["sh", "-c", "echo scheduled-report"]
+
