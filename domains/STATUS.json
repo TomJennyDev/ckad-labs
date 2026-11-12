@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "domain_order": [
+    {
+      "id": "D1",
+      "name": "Application Design and Build",
+      "weight": 20,
+      "planned_labs": 12
+    },
+    {
+      "id": "D2",
+      "name": "Application Deployment",
+      "weight": 20,
+      "planned_labs": 12
+    },
+    {
+      "id": "D3",
+      "name": "Application Observability and Maintenance",
+      "weight": 15,
+      "planned_labs": 9
+    },
+    {
+      "id": "D4",
+      "name": "Application Environment Configuration and Security",
+      "weight": 25,
+      "planned_labs": 15
+    },
+    {
+      "id": "D5",
+      "name": "Services and Networking",
+      "weight": 20,
+      "planned_labs": 12
+    }
+  ],
+  "completed_ids": [
+    "D1-001",
+    "D1-002",
+    "D1-003",
+    "D1-004",
+    "D1-005"
+  ],
+  "next_planned_id": "D1-006",
+  "runtime_smoke": "not_run",
+  "policy": "One next planned lab per hourly run, commit and update registry; no duplicate concepts"
+}
