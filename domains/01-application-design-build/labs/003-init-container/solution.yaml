@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bootstrap
+  labels: {app: bootstrap}
+spec:
+  volumes:
+    - name: state
+      emptyDir: {}
+  initContainers:
+    - name: prepare
+      image: busybox:1.36
+      command: ["sh", "-c", "echo -n initialized > /work/ready.flag"]
+      volumeMounts:
+        - {name: state, mountPath: /work}
+  containers:
+    - name: app
+      image: busybox:1.36
+      command: ["sh", "-c", "test -f /work/ready.flag && grep -qx initialized /work/ready.flag && sleep 3600"]
+      volumeMounts:
+        - {name: state, mountPath: /work}
