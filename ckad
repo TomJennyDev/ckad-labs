@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+source "$ROOT/lib/common.sh"
+cmd="$1"
+if [[ "$cmd" == "list" ]]; then
+  for d in "$ROOT"/labs/[0-9][0-9][0-9]-*; do
+    [[ -d "$d" ]] || continue
+    printf '%s  %s\n' "$(basename "$d" | cut -c1-3)" "$(head -n1 "$d/README.md" | sed 's/^# //')"
+  done
+  exit 0
+fi
+if [[ "$cmd" == "doctor" ]]; then
+  for bin in docker kind kubectl; do command -v "$bin" || true; done
+  ensure_cluster
+  k get nodes -o wide
+  exit 0
+fi
+if [[ "$cmd" == "help" || "$cmd" == "--help" ]]; then
+  echo "Usage: ./ckad list|doctor|start|check|hint|solve|reset [001..010]"
+  exit 0
+fi
+[[ "$cmd" =~ ^(start|check|hint|solve|reset)$ ]] || fail "Unknown command: $cmd"
+[[ "$2" =~ ^[0-9]{1,3}$ ]] || fail "Expected numeric lab ID"
+id="$(printf '%03d' "$((10#$2))")"
+matches=("$ROOT"/labs/"$id"-*)
+[[ -d "matches[0]" ]] || fail "Lab $id not implemented"
+d="matches[0]"
+ns="ckad-$id"
+if [[ "$cmd" == "hint" ]]; then
+  echo "Investigate: kubectl --context kind-ckad-labs -n $ns get all"
+  echo "Then: kubectl --context kind-ckad-labs -n $ns get events --sort-by=.lastTimestamp"
+  exit 0
+fi
+ensure_cluster
+if [[ "$cmd" == "start" ]]; then
+  if k get ns "$ns" >/dev/null 2>&1; then
+    ensure_owner "$ns"
+  else
+    k create ns "$ns"
+    k label ns "$ns" app.kubernetes.io/managed-by=ckad-labs
+  fi
+  if grep -q '^kind:' "$d/setup.yaml"; then k -n "$ns" apply -f "$d/setup.yaml"; fi
+  echo "Lab $id ready. Open $d/README.md"
+else
+  ensure_owner "$ns"
+  case "$cmd" in
+    check) NS="$ns" bash "$d/verify.sh" ;;
+    solve) k -n "$ns" apply -f "$d/solution.yaml" ;;
+    reset) k delete ns "$ns" --wait=false ;;
+  esac
+fi
