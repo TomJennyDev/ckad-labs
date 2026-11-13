@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: invoice-worker-config
+  namespace: ckad-d3-005
+data:
+  WORKER_MODE: consume

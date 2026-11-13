@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ckad-d3-005
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: invoice-worker-config
+  namespace: ckad-d3-005
+data:
+  WORKER_MODE: invalid
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: invoice-worker
+  namespace: ckad-d3-005
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: invoice-worker
+  template:
+    metadata:
+      labels:
+        app: invoice-worker
+    spec:
+      containers:
+        - name: worker
+          image: busybox:1.36
+          command: ["/bin/sh", "-c"]
+          args:
+            - 'if [ "$WORKER_MODE" != "consume" ]; then echo "invalid WORKER_MODE=$WORKER_MODE" >&2; exit 42; fi; echo worker-ready; while true; do sleep 30; done'
+          env:
+            - name: WORKER_MODE
+              valueFrom:
+                configMapKeyRef:
+                  name: invoice-worker-config
+                  key: WORKER_MODE
+          readinessProbe:
+            exec:
+              command: ["/bin/sh", "-c", "test \"$WORKER_MODE\" = consume"]
+            initialDelaySeconds: 1
+            periodSeconds: 3
