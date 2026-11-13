@@ -1,0 +1,9 @@
+resources:
+- ../../base
+patches:
+- path: deployment-patch.yaml
+configMapGenerator:
+- name: inventory-settings
+  literals:
+  - APP_MODE=production
+  - LOG_LEVEL=warn
