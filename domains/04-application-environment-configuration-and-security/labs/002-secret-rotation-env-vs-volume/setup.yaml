@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ckad-d4-002
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: billing-credentials
+  namespace: ckad-d4-002
+type: Opaque
+stringData:
+  api-key: "key-v1"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: billing-worker
+  namespace: ckad-d4-002
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: billing-worker}
+  template:
+    metadata:
+      labels: {app: billing-worker}
+    spec:
+      containers:
+        - name: worker
+          image: busybox:1.36
+          command: ["/bin/sh", "-c"]
+          args:
+            - 'while true; do sleep 10; done'
+          env:
+            - name: BOOT_API_KEY
+              valueFrom:
+                secretKeyRef: {name: billing-credentials, key: api-key}
+          volumeMounts:
+            - {name: credentials, mountPath: /var/run/credentials, readOnly: true}
+      volumes:
+        - name: credentials
+          secret: {secretName: billing-credentials}
