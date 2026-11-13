@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ckad-d2-012
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: billing-reconcile
+  namespace: ckad-d2-012
+spec:
+  schedule: "*/5 * * * *"
+  timeZone: "Etc/UTC"
+  concurrencyPolicy: Allow
+  startingDeadlineSeconds: 120
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 2
+  suspend: true
+  jobTemplate:
+    spec:
+      backoffLimit: 6
+      activeDeadlineSeconds: 180
+      ttlSecondsAfterFinished: 600
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: reconcile
+              image: busybox:1.35
+              command: ["/bin/sh", "-c", "echo reconcile-complete"]
