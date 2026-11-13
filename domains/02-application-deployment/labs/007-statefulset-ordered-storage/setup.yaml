@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: report-shard-task
+data:
+  task: "Create a 3-replica StatefulSet with per-Pod PVCs and a headless Service. Read README.md."
