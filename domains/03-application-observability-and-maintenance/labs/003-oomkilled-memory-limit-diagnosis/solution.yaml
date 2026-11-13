@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: report-api
+  namespace: ckad-d3-003
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: report-api}
+  template:
+    metadata:
+      labels: {app: report-api}
+    spec:
+      containers:
+        - name: api
+          image: python:3.12-alpine
+          command: ["python", "-u", "-c"]
+          args:
+            - |
+              import os,time
+              data=bytearray(96*1024*1024)
+              print("allocated",len(data),flush=True)
+              while True: time.sleep(5)
+          resources:
+            requests: {memory: 128Mi, cpu: 10m}
+            limits: {memory: 192Mi, cpu: 200m}
