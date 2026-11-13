@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ckad-d4-001
+  labels:
+    app.kubernetes.io/part-of: ckad-labs
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pricing-settings
+  namespace: ckad-d4-001
+data:
+  discount.txt: "5"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pricing-api
+  namespace: ckad-d4-001
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pricing-api
+  template:
+    metadata:
+      labels:
+        app: pricing-api
+    spec:
+      containers:
+        - name: web
+          image: busybox:1.36
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              mkdir -p /www
+              while true; do
+                value="$(cat /etc/pricing/discount.txt 2>/dev/null || echo unavailable)"
+                printf 'discount=%s\n' "$value" > /www/index.html
+                sleep 2
+              done &
+              exec httpd -f -p 8080 -h /www
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 3
+          volumeMounts:
+            - name: settings
+              mountPath: /etc/pricing
+              readOnly: true
+      volumes:
+        - name: settings
+          configMap:
+            name: pricing-settings
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pricing-api
+  namespace: ckad-d4-001
+spec:
+  selector:
+    app: pricing-api
+  ports:
+    - port: 80
+      targetPort: 8080
