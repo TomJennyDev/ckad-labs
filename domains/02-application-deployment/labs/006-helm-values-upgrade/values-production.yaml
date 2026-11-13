@@ -1,0 +1,6 @@
+replicaCount: 3
+environment: production
+logLevel: warn
+image:
+  repository: nginx
+  tag: 1.27-alpine
