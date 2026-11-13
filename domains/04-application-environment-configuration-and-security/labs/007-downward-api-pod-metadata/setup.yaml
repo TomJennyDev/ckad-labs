@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ckad-d4-007
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-code
+  namespace: ckad-d4-007
+data:
+  server.py: |
+    import os
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            if self.path != "/identity":
+                self.send_response(404); self.end_headers(); return
+            body = ("pod=" + os.getenv("POD_NAME","missing") + "\n"
+                    + "namespace=" + os.getenv("POD_NAMESPACE","missing") + "\n"
+                    + "node=" + os.getenv("NODE_NAME","missing") + "\n"
+                    + "cpu_request=" + os.getenv("CPU_REQUEST","missing") + "\n"
+                    + "labels=" + open("/etc/podinfo/labels").read().strip() + "\n")
+            self.send_response(200); self.end_headers(); self.wfile.write(body.encode())
+    HTTPServer(("0.0.0.0",8080),Handler).serve_forever()
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: identity-api
+  namespace: ckad-d4-007
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: identity-api}
+  template:
+    metadata:
+      labels: {app: identity-api, team: platform}
+    spec:
+      containers:
+        - name: api
+          image: python:3.12-alpine
+          command: ["python", "/app/server.py"]
+          ports: [{containerPort: 8080}]
+          resources:
+            requests: {cpu: 50m, memory: 32Mi}
+            limits: {cpu: 200m, memory: 128Mi}
+          env:
+            - name: POD_NAME
+              value: hardcoded-pod
+            - name: POD_NAMESPACE
+              value: default
+            - name: NODE_NAME
+              value: unknown
+            - name: CPU_REQUEST
+              value: unknown
+          volumeMounts:
+            - {name: code, mountPath: /app, readOnly: true}
+            - {name: podinfo, mountPath: /etc/podinfo, readOnly: true}
+      volumes:
+        - name: code
+          configMap: {name: app-code}
+        - name: podinfo
+          downwardAPI:
+            items:
+              - path: labels
+                fieldRef: {fieldPath: metadata.labels}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: identity-api
+  namespace: ckad-d4-007
+spec:
+  selector: {app: identity-api}
+  ports: [{port: 80, targetPort: 8080}]
