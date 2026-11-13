@@ -1,0 +1,25 @@
+# Reference rendered desired state; actual solution is kubectl apply -k overlays/production.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory
+  labels: {app: inventory, environment: production}
+spec:
+  replicas: 3
+  selector:
+    matchLabels: {app: inventory}
+  template:
+    metadata:
+      labels: {app: inventory, environment: production}
+    spec:
+      containers:
+      - name: web
+        image: nginx:1.27-alpine
+        ports: [{containerPort: 80, name: http}]
+        readinessProbe:
+          httpGet: {path: /, port: http}
+          periodSeconds: 3
+        resources:
+          requests: {cpu: 20m, memory: 32Mi}
+        envFrom:
+        - configMapRef: {name: inventory-settings}
