@@ -52,9 +52,10 @@
     "D2-005",
     "D2-006",
     "D2-007",
-    "D2-008"
+    "D2-008",
+    "D2-009"
   ],
-  "next_planned_id": "D2-009",
+  "next_planned_id": "D2-010",
   "runtime_smoke": "not_run",
   "policy": "One next planned lab per hourly run, commit and update registry; no duplicate concepts"
 }
