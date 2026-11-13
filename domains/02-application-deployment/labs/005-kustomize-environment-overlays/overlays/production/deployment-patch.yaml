@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory
+  labels:
+    environment: production
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        environment: production
+    spec:
+      containers:
+      - name: web
+        envFrom:
+        - configMapRef:
+            name: inventory-settings
