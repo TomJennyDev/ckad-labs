@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ckad-d5-011
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog
+  namespace: ckad-d5-011
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: catalog}
+  template:
+    metadata:
+      labels: {app: catalog}
+    spec:
+      containers:
+        - name: http
+          image: hashicorp/http-echo:1.0.0
+          args: ["-listen=:5678", "-text=catalog-ok"]
+          ports: [{containerPort: 5678, name: http}]
+          readinessProbe:
+            httpGet: {path: /, port: 5678}
+            initialDelaySeconds: 1
+            periodSeconds: 3
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkout
+  namespace: ckad-d5-011
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: checkout}
+  template:
+    metadata:
+      labels: {app: checkout}
+    spec:
+      containers:
+        - name: http
+          image: hashicorp/http-echo:1.0.0
+          args: ["-listen=:5678", "-text=checkout-ok"]
+          ports: [{containerPort: 5678, name: http}]
+          readinessProbe:
+            httpGet: {path: /, port: 5678}
+            initialDelaySeconds: 1
+            periodSeconds: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalog
+  namespace: ckad-d5-011
+spec:
+  selector: {app: catalog}
+  ports: [{name: http, port: 80, targetPort: http}]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: checkout
+  namespace: ckad-d5-011
+spec:
+  selector: {app: checkout}
+  ports: [{name: http, port: 80, targetPort: http}]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: storefront
+  namespace: ckad-d5-011
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: shop.ckad.local
+      http:
+        paths:
+          - path: /catalog
+            pathType: Prefix
+            backend:
+              service:
+                name: checkout
+                port: {number: 80}
+          - path: /checkout
+            pathType: Prefix
+            backend:
+              service:
+                name: catalog
+                port: {number: 80}
