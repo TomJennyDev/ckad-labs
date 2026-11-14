@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ckad-d5-001
+  labels:
+    app.kubernetes.io/part-of: ckad-labs
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-api
+  namespace: ckad-d5-001
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: inventory-api
+  template:
+    metadata:
+      labels:
+        app: inventory-api
+    spec:
+      containers:
+      - name: web
+        image: hashicorp/http-echo:1.0.0
+        args: ["-listen=:8080", "-text=inventory-ok"]
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+          periodSeconds: 3
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-api
+  namespace: ckad-d5-001
+spec:
+  type: ClusterIP
+  selector:
+    app: inventory-v2
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: storefront
+  namespace: ckad-d5-001
+spec:
+  restartPolicy: Always
+  containers:
+  - name: client
+    image: busybox:1.36
+    command: ["sh", "-c", "sleep 86400"]
