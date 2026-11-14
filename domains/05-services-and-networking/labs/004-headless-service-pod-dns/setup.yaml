@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ckad-d5-004
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: peer-discovery
+  namespace: ckad-d5-004
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: false
+  selector:
+    app: ledger
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ledger
+  namespace: ckad-d5-004
+spec:
+  serviceName: wrong-discovery
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ledger
+  template:
+    metadata:
+      labels:
+        app: ledger
+    spec:
+      containers:
+        - name: api
+          image: hashicorp/http-echo:1.0.0
+          args: ["-listen=:8080", "-text=ledger-peer-ok"]
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 3
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dns-client
+  namespace: ckad-d5-004
+spec:
+  containers:
+    - name: client
+      image: busybox:1.36
+      command: ["sh", "-c", "sleep 86400"]
