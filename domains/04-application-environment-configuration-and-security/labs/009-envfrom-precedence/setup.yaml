@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Namespace
+metadata: {name: ckad-d4-009}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: checkout-defaults, namespace: ckad-d4-009}
+data: {APP_MODE: production, LOG_LEVEL: info, PORT: "8080"}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: checkout-overrides, namespace: ckad-d4-009}
+data: {APP_MODE: staging, LOG_LEVEL: debug, FEATURE_FLAG: enabled}
+---
+apiVersion: v1
+kind: Secret
+metadata: {name: checkout-credentials, namespace: ckad-d4-009}
+type: Opaque
+stringData: {API_KEY: lab-demo-key}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: checkout-api, namespace: ckad-d4-009}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: checkout-api}}
+  template:
+    metadata: {labels: {app: checkout-api}}
+    spec:
+      containers:
+        - name: api
+          image: python:3.12-alpine
+          command: [python, -u, -c]
+          args:
+            - |
+              import os,json
+              from http.server import HTTPServer,BaseHTTPRequestHandler
+              class H(BaseHTTPRequestHandler):
+                  def do_GET(self):
+                      if self.path!="/health":
+                          self.send_response(404);self.end_headers();return
+                      body=json.dumps({k:os.getenv(k,"") for k in ("APP_MODE","LOG_LEVEL","PORT","FEATURE_FLAG")}).encode()
+                      self.send_response(200);self.send_header("Content-Length",str(len(body)));self.end_headers();self.wfile.write(body)
+                  def log_message(self,*args):pass
+              HTTPServer(("0.0.0.0",8080),H).serve_forever()
+          envFrom:
+            - configMapRef: {name: checkout-overrides}
+            - configMapRef: {name: checkout-defaults}
+          env:
+            - name: API_KEY
+              valueFrom: {secretKeyRef: {name: checkout-credentials, key: API_KEY}}
+          ports: [{containerPort: 8080}]
+          readinessProbe: {httpGet: {path: /health, port: 8080}, periodSeconds: 2}
+          resources: {requests: {cpu: 20m, memory: 32Mi}, limits: {cpu: 150m, memory: 96Mi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: checkout-api, namespace: ckad-d4-009}
+spec:
+  selector: {app: checkout-api}
+  ports: [{port: 80, targetPort: 8080}]
