@@ -87,9 +87,10 @@
     "D5-004",
     "D5-005",
     "D5-006",
-    "D5-007"
+    "D5-007",
+    "D5-008"
   ],
-  "next_planned_id": "D5-008",
+  "next_planned_id": "D5-009",
   "runtime_smoke": "not_run",
   "policy": "One next planned lab per hourly run, commit and update registry; no duplicate concepts"
 }

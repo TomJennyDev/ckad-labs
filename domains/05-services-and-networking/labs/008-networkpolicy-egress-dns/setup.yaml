@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ckad-d5-008
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pricing-api
+  namespace: ckad-d5-008
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: pricing-api}
+  template:
+    metadata:
+      labels: {app: pricing-api}
+    spec:
+      containers:
+        - name: api
+          image: hashicorp/http-echo:1.0.0
+          args: ["-listen=:5678", "-text=pricing-ok"]
+          ports: [{name: http, containerPort: 5678}]
+          readinessProbe:
+            tcpSocket: {port: 5678}
+            initialDelaySeconds: 1
+            periodSeconds: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pricing-api
+  namespace: ckad-d5-008
+spec:
+  selector: {app: pricing-api}
+  ports: [{name: http, port: 80, targetPort: http}]
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: checkout-worker
+  namespace: ckad-d5-008
+  labels: {app: checkout-worker}
+spec:
+  containers:
+    - name: curl
+      image: curlimages/curl:8.11.1
+      command: ["sh", "-c", "sleep 86400"]
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: blocked-worker
+  namespace: ckad-d5-008
+  labels: {app: blocked-worker}
+spec:
+  containers:
+    - name: curl
+      image: curlimages/curl:8.11.1
+      command: ["sh", "-c", "sleep 86400"]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: checkout-egress
+  namespace: ckad-d5-008
+spec:
+  podSelector:
+    matchLabels: {app: checkout-worker}
+  policyTypes: [Egress]
+  egress: []
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: blocked-egress
+  namespace: ckad-d5-008
+spec:
+  podSelector:
+    matchLabels: {app: blocked-worker}
+  policyTypes: [Egress]
+  egress: []
