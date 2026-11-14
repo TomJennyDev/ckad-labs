@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ckad-d4-012
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pricing-config
+  namespace: ckad-d4-012
+data:
+  price.txt: "100"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pricing-api
+  namespace: ckad-d4-012
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: pricing-api}
+  template:
+    metadata:
+      labels: {app: pricing-api}
+    spec:
+      containers:
+      - name: pricing
+        image: busybox:1.36
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          while true; do
+            cat /etc/pricing/price.txt >/dev/null || exit 1
+            sleep 2
+          done
+        volumeMounts:
+        - name: pricing
+          mountPath: /etc/pricing/price.txt
+          subPath: price.txt
+          readOnly: true
+        readinessProbe:
+          exec:
+            command: ["/bin/sh", "-c", "test -r /etc/pricing/price.txt"]
+          periodSeconds: 3
+      volumes:
+      - name: pricing
+        configMap:
+          name: pricing-config
