@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: Namespace
+metadata: {name: ckad-d5-007}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: orders, namespace: ckad-d5-007}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: orders}}
+  template:
+    metadata: {labels: {app: orders}}
+    spec:
+      containers:
+      - name: web
+        image: hashicorp/http-echo:1.0.0
+        args: ["-listen=:5678", "-text=orders-ok"]
+        ports: [{containerPort: 5678}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: orders, namespace: ckad-d5-007}
+spec:
+  selector: {app: orders}
+  ports: [{port: 80, targetPort: 5678}]
+---
+apiVersion: v1
+kind: Pod
+metadata: {name: frontend, namespace: ckad-d5-007, labels: {role: frontend}}
+spec:
+  containers:
+  - name: curl
+    image: curlimages/curl:8.11.1
+    command: ["sh", "-c", "sleep 86400"]
+---
+apiVersion: v1
+kind: Pod
+metadata: {name: intruder, namespace: ckad-d5-007, labels: {role: intruder}}
+spec:
+  containers:
+  - name: curl
+    image: curlimages/curl:8.11.1
+    command: ["sh", "-c", "sleep 86400"]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: orders-ingress, namespace: ckad-d5-007}
+spec:
+  podSelector: {matchLabels: {app: orders}}
+  policyTypes: [Ingress]
+  ingress: []
