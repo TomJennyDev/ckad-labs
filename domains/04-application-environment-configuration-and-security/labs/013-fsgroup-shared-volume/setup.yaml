@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ckad-d4-013
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ledger-api
+  namespace: ckad-d4-013
+  labels:
+    app: ledger-api
+spec:
+  restartPolicy: Always
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+    fsGroup: 2000
+  initContainers:
+    - name: seed
+      securityContext:
+        runAsUser: 10002
+      image: busybox:1.36
+      command: ["/bin/sh", "-c"]
+      args:
+        - |
+          echo 'invoice=paid' > /shared/ledger.txt
+          chgrp 2000 /shared/ledger.txt
+          chmod 0600 /shared/ledger.txt
+      volumeMounts:
+        - name: shared
+          mountPath: /shared
+  containers:
+    - name: reader
+      image: busybox:1.36
+      command: ["/bin/sh", "-c"]
+      args:
+        - |
+          while true; do
+            if cat /shared/ledger.txt >/dev/null 2>&1; then
+              echo "READ_OK"; sleep 10
+            else
+              echo "READ_DENIED"; sleep 10
+            fi
+          done
+      volumeMounts:
+        - name: shared
+          mountPath: /shared
+  volumes:
+    - name: shared
+      emptyDir: {}
