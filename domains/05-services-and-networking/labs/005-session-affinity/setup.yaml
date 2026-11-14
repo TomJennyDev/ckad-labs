@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ckad-d5-005
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-blue
+  namespace: ckad-d5-005
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: orders, variant: blue}
+  template:
+    metadata:
+      labels: {app: orders, variant: blue}
+    spec:
+      containers:
+      - name: api
+        image: hashicorp/http-echo:1.0.0
+        args: ["-listen=:8080", "-text=blue"]
+        ports: [{name: http, containerPort: 8080}]
+        readinessProbe:
+          httpGet: {path: /, port: http}
+          periodSeconds: 3
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-green
+  namespace: ckad-d5-005
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: orders, variant: green}
+  template:
+    metadata:
+      labels: {app: orders, variant: green}
+    spec:
+      containers:
+      - name: api
+        image: hashicorp/http-echo:1.0.0
+        args: ["-listen=:8080", "-text=green"]
+        ports: [{name: http, containerPort: 8080}]
+        readinessProbe:
+          httpGet: {path: /, port: http}
+          periodSeconds: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orders
+  namespace: ckad-d5-005
+spec:
+  type: ClusterIP
+  selector: {app: orders}
+  sessionAffinity: None
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: client-a
+  namespace: ckad-d5-005
+spec:
+  containers:
+  - name: client
+    image: busybox:1.36
+    command: ["sh", "-c", "sleep 86400"]
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: client-b
+  namespace: ckad-d5-005
+spec:
+  containers:
+  - name: client
+    image: busybox:1.36
+    command: ["sh", "-c", "sleep 86400"]
