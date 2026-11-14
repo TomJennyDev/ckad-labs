@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ckad-d5-009-api
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ckad-d5-009-trusted
+  labels:
+    access-tier: trusted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ckad-d5-009-rogue
+  labels:
+    access-tier: rogue
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: billing-api
+  namespace: ckad-d5-009-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: billing-api}
+  template:
+    metadata:
+      labels: {app: billing-api}
+    spec:
+      containers:
+        - name: http
+          image: hashicorp/http-echo:1.0.0
+          args: ["-listen=:5678", "-text=billing-ok"]
+          ports: [{name: http, containerPort: 5678}]
+          readinessProbe:
+            tcpSocket: {port: http}
+            periodSeconds: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: billing-api
+  namespace: ckad-d5-009-api
+spec:
+  selector: {app: billing-api}
+  ports: [{name: http, port: 80, targetPort: http}]
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: authorized-client
+  namespace: ckad-d5-009-trusted
+  labels: {role: billing-client}
+spec:
+  containers:
+    - name: curl
+      image: curlimages/curl:8.11.1
+      command: ["sh", "-c", "sleep 86400"]
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: intruder
+  namespace: ckad-d5-009-trusted
+  labels: {role: intruder}
+spec:
+  containers:
+    - name: curl
+      image: curlimages/curl:8.11.1
+      command: ["sh", "-c", "sleep 86400"]
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: spoofed-client
+  namespace: ckad-d5-009-rogue
+  labels: {role: billing-client}
+spec:
+  containers:
+    - name: curl
+      image: curlimages/curl:8.11.1
+      command: ["sh", "-c", "sleep 86400"]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: billing-ingress
+  namespace: ckad-d5-009-api
+spec:
+  podSelector:
+    matchLabels: {app: billing-api}
+  policyTypes: [Ingress]
+  # BUG: separate 'from' items are OR, not AND. Intruder and spoofed client can enter.
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: {access-tier: trusted}
+        - podSelector:
+            matchLabels: {role: billing-client}
+      ports:
+        - {protocol: TCP, port: 5678}
